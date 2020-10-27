@@ -2,12 +2,16 @@ package com.br.arley.spotifyclone;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -21,7 +25,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    ImageView coverImage;
+    ImageView coverImage, discoImage;
     MediaPlayer mediaPlayer;
     TextView tvPlaylist, tvName, tvAuthor, tvPosition;
     ImageButton btPlay, btNext, btPrevious;
@@ -30,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     int numSong = 0;
 
     AudioManager audioManager;
+    ObjectAnimator anim;
+    ObjectAnimator anim1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = new MediaPlayer();
 
+        discoImage = findViewById(R.id.iv_disco);
 
         songList = new ArrayList<>();
 
@@ -86,10 +93,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        setAnimation();
         startSong(song);
         play(btPlay);
 
     }
+
+    public void setAnimation(){
+        anim = new ObjectAnimator();
+        anim1 = new ObjectAnimator();
+
+        anim = ObjectAnimator.ofFloat(discoImage, "rotation", 0, 360);
+        anim1 = ObjectAnimator.ofFloat(coverImage, "rotation", 0, 360);
+        anim.setDuration(5000);
+        anim1.setDuration(5000);
+        anim.setRepeatMode(ObjectAnimator.RESTART);
+        anim1.setRepeatMode(ObjectAnimator.RESTART);
+        anim.setInterpolator(new LinearInterpolator());
+        anim1.setInterpolator(new LinearInterpolator());
+        anim.setRepeatCount(ObjectAnimator.INFINITE);
+        anim1.setRepeatCount(ObjectAnimator.INFINITE);
+        anim.start();
+        anim1.start();
+    }
+
+    public void resumeAnimation(){
+        anim.resume();
+        anim1.resume();
+    }
+
+    public void pauseAnimation(){
+        anim.pause();
+        anim1.pause();
+    }
+
 
     public void startSong(Song song){
         Glide.with(this).load(song.getImgUrl()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
@@ -113,10 +150,12 @@ public class MainActivity extends AppCompatActivity {
         }
         if(mediaPlayer.isPlaying()){
             mediaPlayer.pause();
+            pauseAnimation();
             ((ImageButton)view).setImageDrawable(getResources().getDrawable(R.drawable.ic_baseline_play));
 
         }else{
             mediaPlayer.start();
+            resumeAnimation();
             ((ImageButton)view).setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
         }
     }
@@ -131,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
         mediaPlayer.stop();
         startSong(songList.get(numSong));
         btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+        resumeAnimation();
 
     }
 
