@@ -15,7 +15,7 @@
         android:fontFamily="@font/nunito_regular"
         android:text="Tocando da playlist"
         android:textAllCaps="true"
-        android:textColor="#fff"
+        android:textColor="#FFFFFF"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

@@ -6,9 +6,11 @@ public class Song {
     String author;
     String playlistName;
     int song;
+
+
     boolean favorite;
 
-    public Song(){
+    public Song() {
 
     }
 
@@ -20,13 +22,6 @@ public class Song {
         this.song = song;
     }
 
-    public Song(String name, String imgUrl, String author, String playlistName, boolean favorite) {
-        this.imgUrl = imgUrl;
-        this.name = name;
-        this.author = author;
-        this.playlistName = playlistName;
-        this.favorite = favorite;
-    }
 
     public String getImgUrl() {
         return imgUrl;
@@ -75,4 +70,5 @@ public class Song {
     public void setFavorite(boolean favorite) {
         this.favorite = favorite;
     }
+
 }

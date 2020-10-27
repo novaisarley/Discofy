@@ -36,19 +36,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mediaPlayer = new MediaPlayer();
+
+
         songList = new ArrayList<>();
 
         Song song = new Song("https://img.youtube.com/vi/DPgE7PNzXag/maxresdefault.jpg", "Non-Stop", "Original Broadway Cast of Hamilton", "Hamilton", R.raw.non_stop);
         Song song1 = new Song("https://img.youtube.com/vi/tlp8iY4g--4/maxresdefault.jpg", "Chega de Saudade", "João Gilberto", "Chega de Saudade", R.raw.chega_de_saudade);
         Song song2 = new Song("https://img.youtube.com/vi/enuYFtMHgfU/maxresdefault.jpg", "Golden", "Harry Styles", "Fine Line", R.raw.golden);
-        Song song3 = new Song("https://img.youtube.com/vi/tcYodQoapMg/maxresdefault.jpg", "Postions", "Ariana Grande", "Postions", R.raw.positions);
+        Song song3 = new Song("https://img.youtube.com/vi/tcYodQoapMg/maxresdefault.jpg", "Positions", "Ariana Grande", "Positions", R.raw.positions);
         Song song4 = new Song("https://img.youtube.com/vi/nuYkdJaB_tg/maxresdefault.jpg", "Ramblings Of A Lunatic", "Bears in Trees", "Ramblings Of A Lunatic", R.raw.ramblings_of_a_lunatic);
+        Song song5 = new Song("https://img.youtube.com/vi/loOWKm8GW6A/maxresdefault.jpg", "Level of Concern", "twenty one pilots", "Level of Concern", R.raw.level_of_concern);
 
         songList.add(song);
         songList.add(song1);
         songList.add(song2);
         songList.add(song3);
         songList.add(song4);
+        songList.add(song5);
 
         btPlay = findViewById(R.id.bt_play_pause);
         btNext = findViewById(R.id.bt_next);
@@ -81,8 +86,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-
         startSong(song);
         play(btPlay);
 
@@ -91,12 +94,17 @@ public class MainActivity extends AppCompatActivity {
     public void startSong(Song song){
         Glide.with(this).load(song.getImgUrl()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
         mediaPlayer = MediaPlayer.create(getApplicationContext(), song.getSong());
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                nextSong(btPlay);
+            }
+        });
         tvName.setText(song.getName());
         tvPlaylist.setText(song.getPlaylistName());
         tvAuthor.setText(song.getAuthor());
         tvPosition.setText(numSong + 1 + "/" + songList.size());
         mediaPlayer.start();
-
     }
 
     public void play(View view){
@@ -112,10 +120,10 @@ public class MainActivity extends AppCompatActivity {
             ((ImageButton)view).setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
         }
     }
-    
+
     public void nextSong(View view){
         if (numSong >= songList.size()-1){
-            numSong = songList.size()-1;
+            numSong = 0;
         }
         else{
             numSong++;
@@ -123,8 +131,9 @@ public class MainActivity extends AppCompatActivity {
         mediaPlayer.stop();
         startSong(songList.get(numSong));
         btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+
     }
-    
+
     public void previousSong(View view){
         if (numSong <= 0){
             numSong = 0;
@@ -151,15 +160,15 @@ public class MainActivity extends AppCompatActivity {
             return super.onKeyDown(keyCode, event);
     }
 
-    @Override
+    /*@Override
     protected void onPause() {
         super.onPause();
         mediaPlayer.pause();
-    }
+    }*/
 
     @Override
     protected void onResume() {
         super.onResume();
-        play(btPlay);
+        sbVolume.setProgress(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
     }
 }
