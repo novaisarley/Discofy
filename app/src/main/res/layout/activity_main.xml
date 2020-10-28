@@ -17,7 +17,7 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline13"
         app:layout_constraintStart_toStartOf="@+id/guideline9"
         app:layout_constraintTop_toTopOf="@+id/guideline"
-        app:srcCompat="@drawable/disco" />
+        app:srcCompat="@drawable/disco"/>
 
     <TextView
         android:id="@+id/textView"
