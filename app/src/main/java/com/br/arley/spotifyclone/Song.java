@@ -1,12 +1,14 @@
 package com.br.arley.spotifyclone;
 
+import android.graphics.Bitmap;
+
 public class Song {
     String imgUrl;
     String name;
     String author;
     String playlistName;
     int song;
-
+    Bitmap cover;
 
     boolean favorite;
 
@@ -71,4 +73,11 @@ public class Song {
         this.favorite = favorite;
     }
 
+    public Bitmap getCover() {
+        return cover;
+    }
+
+    public void setCover(Bitmap cover) {
+        this.cover = cover;
+    }
 }

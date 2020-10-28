@@ -1,12 +1,22 @@
 package com.br.arley.spotifyclone;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.animation.ObjectAnimator;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -19,19 +29,26 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.br.arley.spotifyclone.Services.NotificationActionService;
+import com.br.arley.spotifyclone.Services.OnClearFromRecentService;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Playable {
 
     ImageView coverImage, discoImage;
     MediaPlayer mediaPlayer;
     TextView tvPlaylist, tvName, tvAuthor, tvPosition;
     ImageButton btPlay, btNext, btPrevious;
     SeekBar sbVolume;
+
+    NotificationManager notificationManager;
+
     List<Song> songList;
     int numSong = 0;
 
@@ -50,19 +67,15 @@ public class MainActivity extends AppCompatActivity {
 
         songList = new ArrayList<>();
 
-        Song song = new Song("https://img.youtube.com/vi/DPgE7PNzXag/maxresdefault.jpg", "Non-Stop", "Original Broadway Cast of Hamilton", "Hamilton", R.raw.non_stop);
-        Song song1 = new Song("https://img.youtube.com/vi/tlp8iY4g--4/maxresdefault.jpg", "Chega de Saudade", "João Gilberto", "Chega de Saudade", R.raw.chega_de_saudade);
-        Song song2 = new Song("https://img.youtube.com/vi/enuYFtMHgfU/maxresdefault.jpg", "Golden", "Harry Styles", "Fine Line", R.raw.golden);
-        Song song3 = new Song("https://img.youtube.com/vi/tcYodQoapMg/maxresdefault.jpg", "Positions", "Ariana Grande", "Positions", R.raw.positions);
-        Song song4 = new Song("https://img.youtube.com/vi/nuYkdJaB_tg/maxresdefault.jpg", "Ramblings Of A Lunatic", "Bears in Trees", "Ramblings Of A Lunatic", R.raw.ramblings_of_a_lunatic);
-        Song song5 = new Song("https://img.youtube.com/vi/loOWKm8GW6A/maxresdefault.jpg", "Level of Concern", "twenty one pilots", "Level of Concern", R.raw.level_of_concern);
 
-        songList.add(song);
-        songList.add(song1);
-        songList.add(song2);
-        songList.add(song3);
-        songList.add(song4);
-        songList.add(song5);
+        populateSongs();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createChannel();
+            registerReceiver(broadcastReceiver, new IntentFilter("TRACKS_TRACKS"));
+            startService(new Intent(getBaseContext(), OnClearFromRecentService.class));
+        }
+
 
         btPlay = findViewById(R.id.bt_play_pause);
         btNext = findViewById(R.id.bt_next);
@@ -96,12 +109,57 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setAnimation();
-        startSong(song);
+        startSong(songList.get(0));
+        Glide.with(this).load(songList.get(numSong).getImgUrl()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
         play(btPlay);
 
     }
 
-    public void setAnimation(){
+    private void createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CreateNotification.CHANNEL_ID,
+                    "KOD Dev", NotificationManager.IMPORTANCE_LOW);
+
+            notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void populateSongs() {
+        Song song = new Song("https://img.youtube.com/vi/DPgE7PNzXag/maxresdefault.jpg", "Non-Stop", "Original Broadway Cast of Hamilton", "Hamilton", R.raw.non_stop);
+        Song song1 = new Song("https://img.youtube.com/vi/tlp8iY4g--4/maxresdefault.jpg", "Chega de Saudade", "João Gilberto", "Chega de Saudade", R.raw.chega_de_saudade);
+        Song song2 = new Song("https://img.youtube.com/vi/enuYFtMHgfU/maxresdefault.jpg", "Golden", "Harry Styles", "Fine Line", R.raw.golden);
+        Song song3 = new Song("https://img.youtube.com/vi/tcYodQoapMg/maxresdefault.jpg", "Positions", "Ariana Grande", "Positions", R.raw.positions);
+        Song song4 = new Song("https://img.youtube.com/vi/nuYkdJaB_tg/maxresdefault.jpg", "Ramblings Of A Lunatic", "Bears in Trees", "Ramblings Of A Lunatic", R.raw.ramblings_of_a_lunatic);
+        Song song5 = new Song("https://img.youtube.com/vi/loOWKm8GW6A/maxresdefault.jpg", "Level of Concern", "twenty one pilots", "Level of Concern", R.raw.level_of_concern);
+
+        songList.add(song);
+        songList.add(song1);
+        songList.add(song2);
+        songList.add(song3);
+        songList.add(song4);
+        songList.add(song5);
+
+        for (final Song s : songList) {
+            Glide.with(getApplicationContext())
+                    .asBitmap()
+                    .load(s.getImgUrl())
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                            s.setCover(resource);
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                        }
+                    });
+        }
+    }
+
+    public void setAnimation() {
         anim = new ObjectAnimator();
         anim1 = new ObjectAnimator();
 
@@ -119,19 +177,20 @@ public class MainActivity extends AppCompatActivity {
         anim1.start();
     }
 
-    public void resumeAnimation(){
+    public void resumeAnimation() {
         anim.resume();
         anim1.resume();
     }
 
-    public void pauseAnimation(){
+    public void pauseAnimation() {
         anim.pause();
         anim1.pause();
     }
 
 
-    public void startSong(Song song){
-        Glide.with(this).load(song.getImgUrl()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
+    public void startSong(Song song) {
+        Glide.with(this).load(song.getCover()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
+
         mediaPlayer = MediaPlayer.create(getApplicationContext(), song.getSong());
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -143,49 +202,28 @@ public class MainActivity extends AppCompatActivity {
         tvPlaylist.setText(song.getPlaylistName());
         tvAuthor.setText(song.getAuthor());
         tvPosition.setText(numSong + 1 + "/" + songList.size());
-        mediaPlayer.start();
+        play(btPlay);
     }
 
-    public void play(View view){
-        if (mediaPlayer == null){
+    public void play(View view) {
+        if (mediaPlayer == null) {
             return;
         }
-        if(mediaPlayer.isPlaying()){
-            mediaPlayer.pause();
-            pauseAnimation();
-            ((ImageButton)view).setImageDrawable(getResources().getDrawable(R.drawable.ic_baseline_play));
+        if (mediaPlayer.isPlaying()) {
+            onSongPause();
 
-        }else{
-            mediaPlayer.start();
-            resumeAnimation();
-            ((ImageButton)view).setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+        } else {
+            onSongPlay();
         }
     }
 
-    public void nextSong(View view){
-        if (numSong >= songList.size()-1){
-            numSong = 0;
-        }
-        else{
-            numSong++;
-        }
-        mediaPlayer.stop();
-        startSong(songList.get(numSong));
-        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
-        resumeAnimation();
+    public void nextSong(View view) {
+        onSongNext();
 
     }
 
-    public void previousSong(View view){
-        if (numSong <= 0){
-            numSong = 0;
-        }
-        else{
-            numSong--;
-        }
-        mediaPlayer.stop();
-        startSong(songList.get(numSong));
-        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+    public void previousSong(View view) {
+        onSongPrevious();
     }
 
     @Override
@@ -219,5 +257,92 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         sbVolume.setProgress(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
+    }
+
+
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getExtras().getString("actionname");
+
+            switch (action) {
+                case CreateNotification.ACTION_PREVIUOS:
+                    onSongPrevious();
+                    break;
+
+                case CreateNotification.ACTION_PLAY:
+                    if (mediaPlayer.isPlaying()) {
+                        onSongPause();
+                    } else {
+                        onSongPlay();
+                    }
+                    break;
+
+                case CreateNotification.ACTION_NEXT:
+                    onSongNext();
+
+            }
+        }
+    };
+
+    @Override
+    public void onSongPrevious() {
+        if (numSong <= 0) {
+            numSong = 0;
+        } else {
+            numSong--;
+        }
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        mediaPlayer.release();
+        startSong(songList.get(numSong));
+        CreateNotification.createNotification(MainActivity.this, songList.get(numSong),
+                R.drawable.ic_pause_18dp, numSong, songList.size() - 1, songList.get(numSong).getCover());
+        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+    }
+
+    @Override
+    public void onSongPlay() {
+        Glide.with(this).load(songList.get(numSong).getCover()).placeholder(getResources().getDrawable(R.drawable.carregando)).into(coverImage);
+        mediaPlayer.start();
+        resumeAnimation();
+        CreateNotification.createNotification(MainActivity.this, songList.get(numSong),
+                R.drawable.ic_pause_18dp, numSong, songList.size() - 1, songList.get(numSong).getCover());
+        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+    }
+
+    @Override
+    public void onSongPause() {
+        mediaPlayer.pause();
+        pauseAnimation();
+        CreateNotification.createNotification(MainActivity.this, songList.get(numSong),
+                R.drawable.ic_play_18dp, numSong, songList.size() - 1, songList.get(numSong).getCover());
+        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_baseline_play));
+    }
+
+    @Override
+    public void onSongNext() {
+        if (numSong >= songList.size() - 1) {
+            numSong = 0;
+        } else {
+            numSong++;
+        }
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        mediaPlayer.release();
+        startSong(songList.get(numSong));
+        CreateNotification.createNotification(MainActivity.this, songList.get(numSong),
+                R.drawable.ic_pause_18dp, numSong, songList.size() - 1, songList.get(numSong).getCover());
+        btPlay.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+        resumeAnimation();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.cancelAll();
+        }
+        unregisterReceiver(broadcastReceiver);
     }
 }
